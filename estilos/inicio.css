@@ -85,7 +85,8 @@ body {
     .details > div { text-align: center; }
         .details > div:first-child { border-right: 2px solid rgba(255, 255, 255, .08);}
 
-button {
+a {
+    text-align: center;
     background-color: rgba(255, 255, 255, .06);
     backdrop-filter: blur(20px);
     position: absolute;
@@ -99,6 +100,6 @@ button {
     transition: all .2s ease-in-out;
 }
 
-    button:hover {
+    a:hover {
         background-color: rgba(255, 255, 255, .1);
     }
