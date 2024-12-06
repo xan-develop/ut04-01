@@ -1,43 +1,38 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('formulario');
-    const mostrarContrasenaCheckbox = document.getElementById('mostrarContrasena');
-    const contrasenaInput = document.getElementById('Contrasena');
-    const dniNieInput = document.getElementById('DniNie');
-    const tipoDocumentoSelect = document.getElementById('TipoDocumento');
-    const mensajesDiv = document.getElementById('mensajes');
-    const tituloInput = document.getElementById('PublicacionTitulo');
-    const descripcionInput = document.getElementById('PublicacionDescripcion');
-    const tituloCaracteres = document.getElementById('tituloCaracteres');
-    const descripcionCaracteres = document.getElementById('descripcionCaracteres');
+    const DOM = {
+        form: document.getElementById('formulario'),
+        mostrarContrasenaCheckbox: document.getElementById('mostrarContrasena'),
+        contrasenaInput: document.getElementById('Contrasena'),
+        dniNieInput: document.getElementById('DniNie'),
+        tipoDocumentoSelect: document.getElementById('TipoDocumento'),
+        mensajesDiv: document.getElementById('mensajes'),
+        tituloInput: document.getElementById('PublicacionTitulo'),
+        descripcionInput: document.getElementById('PublicacionDescripcion'),
+        tituloCaracteres: document.getElementById('tituloCaracteres'),
+        descripcionCaracteres: document.getElementById('descripcionCaracteres'),
+        aficionesCheckboxes: document.querySelectorAll('input[name="Aficiones"]'),
+    };
 
-    mostrarContrasenaCheckbox.addEventListener('change', () => {
-        contrasenaInput.type = mostrarContrasenaCheckbox.checked ? 'text' : 'password';
+    const letrasDNI = 'TRWAGMYFPDXBNJZSQVHLCKE';
+
+    // Función para alternar visibilidad de contraseña
+    DOM.mostrarContrasenaCheckbox.addEventListener('change', () => {
+        DOM.contrasenaInput.type = DOM.mostrarContrasenaCheckbox.checked ? 'text' : 'password';
     });
 
-    tituloInput.addEventListener('input', () => {
-        tituloCaracteres.textContent = `${tituloInput.value.length} / 15`;
+    // Contadores de caracteres
+    DOM.tituloInput.addEventListener('input', () => {
+        DOM.tituloCaracteres.textContent = `${DOM.tituloInput.value.length} / 15`;
     });
 
-    descripcionInput.addEventListener('input', () => {
-        descripcionCaracteres.textContent = `${descripcionInput.value.length} / 120`;
+    DOM.descripcionInput.addEventListener('input', () => {
+        DOM.descripcionCaracteres.textContent = `${DOM.descripcionInput.value.length} / 120`;
     });
 
-    form.addEventListener('input', () => {
-        actualizarMensajes();
-    });
-
-    form.addEventListener('submit', (e) => {
-        if (!form.checkValidity()) {
-            e.preventDefault();
-            actualizarMensajes();
-        }
-    });
-
-    dniNieInput.addEventListener('input', validarDniNie);
-
-    function validarDniNie() {
-        const tipoDocumento = tipoDocumentoSelect.value;
-        const dniNie = dniNieInput.value.toUpperCase().trim();
+    // Validar DNI/NIE
+    DOM.dniNieInput.addEventListener('input', () => {
+        const tipoDocumento = DOM.tipoDocumentoSelect.value;
+        const dniNie = DOM.dniNieInput.value.toUpperCase().trim();
         let mensaje = '';
 
         if (tipoDocumento === 'DNI') {
@@ -46,48 +41,77 @@ document.addEventListener('DOMContentLoaded', () => {
             mensaje = validarNIE(dniNie) ? '' : 'NIE no válido. Formato incorrecto o letra no válida.';
         }
 
-        dniNieInput.setCustomValidity(mensaje);
-    }
+        DOM.dniNieInput.setCustomValidity(mensaje);
+    });
 
-    function validarDNI(dni) {
+    // Validar formulario y mostrar mensajes
+    DOM.form.addEventListener('input', () => actualizarMensajes());
+    DOM.form.addEventListener('submit', (e) => {
+        if (!DOM.form.checkValidity()) {
+            e.preventDefault();
+            actualizarMensajes();
+        }
+    });
+
+    // Validar aficiones seleccionadas
+    DOM.form.addEventListener('submit', (e) => {
+        const aficionesSeleccionadas = Array.from(DOM.aficionesCheckboxes)
+            .filter((checkbox) => checkbox.checked)
+            .map((checkbox) => checkbox.value);
+
+        if (aficionesSeleccionadas.length < 2) {
+            e.preventDefault();
+            alert('Debes seleccionar al menos dos aficiones.');
+            return;
+        }
+
+        const prevHiddenInput = document.querySelector('input[type="hidden"][name="Aficiones"]');
+        if (prevHiddenInput) prevHiddenInput.remove();
+
+        const aficionesInputHidden = document.createElement('input');
+        aficionesInputHidden.type = 'hidden';
+        aficionesInputHidden.name = 'Aficiones';
+        aficionesInputHidden.value = aficionesSeleccionadas.join(', ');
+        DOM.form.appendChild(aficionesInputHidden);
+    });
+
+    // Algoristo para validar DNI y NIE
+    const validarDNI = (dni) => {
         const regexDNI = /^[0-9]{8}[A-Z]$/;
         if (!regexDNI.test(dni)) return false;
-
         const numero = parseInt(dni.slice(0, 8), 10);
         const letra = dni.charAt(8);
         return letrasDNI[numero % 23] === letra;
-    }
+    };
 
-    function validarNIE(nie) {
+    const validarNIE = (nie) => {
         const regexNIE = /^[XYZ][0-9]{7}[A-Z]$/;
         if (!regexNIE.test(nie)) return false;
-
-        const nieConvertido = nie
-            .replace('X', '0')
-            .replace('Y', '1')
-            .replace('Z', '2');
+        const nieConvertido = nie.replace('X', '0').replace('Y', '1').replace('Z', '2');
         const numero = parseInt(nieConvertido.slice(0, 8), 10);
         const letra = nie.charAt(8);
         return letrasDNI[numero % 23] === letra;
-    }
+    };
 
-    function actualizarMensajes() {
-        mensajesDiv.innerHTML = '';
+    // Actualizar mensajes en la parte derecha
+    const actualizarMensajes = () => {
+        DOM.mensajesDiv.innerHTML = '';
 
-        Array.from(form.elements).forEach((elemento) => {
+        Array.from(DOM.form.elements).forEach((elemento) => {
             if (elemento.tagName !== 'BUTTON') {
                 const mensaje = elemento.validationMessage;
                 actualizarMensajeCampo(elemento, mensaje);
                 if (mensaje) {
                     const mensajeDiv = document.createElement('div');
                     mensajeDiv.textContent = `${elemento.name}: ${mensaje}`;
-                    mensajesDiv.appendChild(mensajeDiv);
+                    DOM.mensajesDiv.appendChild(mensajeDiv);
                 }
             }
         });
-    }
+    };
 
-    function actualizarMensajeCampo(elemento, mensaje) {
+    // Actualizar mensaje de error de elemento
+    const actualizarMensajeCampo = (elemento, mensaje) => {
         let mensajeElemento = document.querySelector(`#error-${elemento.id}`);
 
         if (!mensajeElemento) {
@@ -98,38 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         mensajeElemento.textContent = mensaje;
-        if (!mensaje) {
-            mensajeElemento.remove();
-        }
-    }
-
-    const letrasDNI = 'TRWAGMYFPDXBNJZSQVHLCKE';
+        if (!mensaje) mensajeElemento.remove();
+    };
 });
-document.getElementById('formulario').addEventListener('submit', function (e) {
-    // Obtener todos los checkbox seleccionados
-    const aficionesSeleccionadas = Array.from(document.querySelectorAll('input[name="Aficiones"]:checked'))
-        .map(aficion => aficion.value);
-
-    // Validar que se seleccionen al menos dos aficiones
-    if (aficionesSeleccionadas.length < 2) {
-        e.preventDefault();  // Evita el envío del formulario si no se seleccionan al menos dos aficiones
-        alert('Debes seleccionar al menos dos aficiones.');
-        return;
-    }
-
-    // Crear un campo oculto para enviar las aficiones seleccionadas como lista separada por comas
-    const aficionesInputHidden = document.createElement('input');
-    aficionesInputHidden.type = 'hidden';
-    aficionesInputHidden.name = 'Aficiones';
-    aficionesInputHidden.value = aficionesSeleccionadas.join(', ');  // Unir las aficiones con coma
-
-    // Eliminar cualquier campo oculto previo para evitar duplicados
-    const prevHiddenInput = document.querySelector('input[type="hidden"][name="Aficiones"]');
-    if (prevHiddenInput) {
-        prevHiddenInput.remove();
-    }
-
-    // Añadir el nuevo campo oculto al formulario
-    this.appendChild(aficionesInputHidden);
-});
-
